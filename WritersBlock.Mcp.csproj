@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>WritersBlock.Mcp</RootNamespace>
+        <AssemblyName>writersblock-mcp</AssemblyName>
+    </PropertyGroup>
+
+    <!-- Release identity. The MCP serverInfo version is derived from InformationalVersion at
+         runtime, so bumping <Version> here flows into the manifest handshake automatically. -->
+    <PropertyGroup>
+        <Version>1.0.0</Version>
+        <InformationalVersion>1.0.0</InformationalVersion>
+        <Product>WritersBlock MCP Connector</Product>
+        <Company>JadedSoftware</Company>
+        <Authors>JadedSoftware</Authors>
+        <Description>Local MCP connector exposing the WritersBlock API to desktop AI clients (Claude Desktop, Claude Code, VS Code, Cursor) over stdio.</Description>
+        <Copyright>Copyright © JadedSoftware</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/Jaded-Software/WritersBlock-MCP</RepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ModelContextProtocol" Version="0.1.0-preview.14" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+        <PackageReference Include="Duende.IdentityModel.OidcClient" Version="7.1.0" />
+        <PackageReference Include="Duende.IdentityModel" Version="8.1.0" />
+        <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.8" />
+    </ItemGroup>
+
+</Project>

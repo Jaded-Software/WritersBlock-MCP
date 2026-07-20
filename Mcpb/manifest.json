@@ -1,0 +1,56 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/dist/mcpb-manifest-latest.schema.json",
+  "manifest_version": "0.3",
+  "name": "writersblock",
+  "display_name": "WritersBlock",
+  "version": "1.0.0",
+  "description": "Exposes the WritersBlock creative-writing API to Claude Desktop as MCP tools — every API function, dispatched as authenticated HTTPS calls from your own machine.",
+  "long_description": "WritersBlock is a local MCP connector. It runs on your machine, signs you in to WritersBlock through your system browser (OAuth), and turns each WritersBlock API function into an MCP tool. Nothing runs on WritersBlock's servers — every request the connector makes is ordinary authenticated API traffic. On first tool call it opens a browser to sign in; after that it silently refreshes your session. By default it targets the production WritersBlock deployment; developers can retarget the API and OAuth authority in this extension's settings.",
+  "author": {
+    "name": "JadedSoftware",
+    "url": "https://writersblock.jadedsoftware.com"
+  },
+  "homepage": "https://writersblock.jadedsoftware.com",
+  "license": "MIT",
+  "keywords": [
+    "writersblock",
+    "writing",
+    "api",
+    "mcp"
+  ],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/writersblock-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/server/writersblock-mcp",
+      "args": [
+        "--api-url",
+        "${user_config.api_url}",
+        "--authority",
+        "${user_config.authority}"
+      ]
+    }
+  },
+  "tools_generated": true,
+  "user_config": {
+    "api_url": {
+      "type": "string",
+      "title": "API base URL",
+      "description": "WritersBlock API base URL. Leave the default for normal use; developers can point this at a local API such as https://localhost:6001.",
+      "required": false,
+      "default": "https://writersblock.jadedsoftware.com"
+    },
+    "authority": {
+      "type": "string",
+      "title": "OAuth authority",
+      "description": "OpenID Connect authority used for sign-in. Leave the default for normal use; developers targeting a local auth server can set https://localhost:6010 (note: the local dev auth server uses a self-signed certificate and also requires the --insecure flag, which a bundle cannot pass — use the manual JSON config for that case).",
+      "required": false,
+      "default": "https://auth.jadedsoftware.com"
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "darwin"
+    ]
+  }
+}

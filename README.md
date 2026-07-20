@@ -5,8 +5,16 @@ API to MCP-capable AI clients (Claude Desktop, Claude Code, VS Code/Copilot, Cur
 
 It speaks **MCP over stdio**, fetches the tool catalog from the WritersBlock API's manifest
 endpoint at startup, registers one MCP tool per API action, and dispatches each tool call as an
-ordinary authenticated HTTPS request. No MCP infrastructure runs on our servers — each user runs
-their own connector, and everything it sends the API is indistinguishable from normal traffic.
+ordinary authenticated HTTPS request. Each user runs their own connector, and everything it sends
+the API is indistinguishable from normal traffic.
+
+> **Sibling: the hosted remote connector.** WritersBlock also serves a **remote MCP endpoint**
+> (streamable HTTP) at `https://writersblock.jadedsoftware.com/mcp`, added on claude.ai as a custom
+> connector (OAuth client `writersblock-mcp-remote`) — no install, works from claude.ai web and the
+> **Claude mobile apps**, but exposes a **curated ~40-tool subset** instead of this connector's full
+> catalog. That endpoint lives in the main WritersBlock repo (`Services/Mcp/Remote/`), not here; it
+> reuses the same manifest catalog server-side. End-user setup:
+> [INSTALL.md § Remote connector](INSTALL.md#0-no-install-option--remote-connector-claudeai-web--mobile).
 
 The connector signs the user in with their normal WritersBlock account through the **system
 browser** (Authorization Code + PKCE, loopback redirect), stores the tokens in the **OS credential
@@ -15,10 +23,11 @@ for scripted/dev use.
 
 ## Installing (end users)
 
-**See [INSTALL.md](INSTALL.md)** for the end-user install guide: the one-click Claude Desktop
-`.mcpb` bundle, manual archive downloads with per-client config snippets (Claude Desktop, Claude
-Code, VS Code, Cursor), the macOS Gatekeeper note, first-run sign-in, and troubleshooting. The rest
-of this README is developer-oriented reference.
+**See [INSTALL.md](INSTALL.md)** for the end-user install guide: the no-install **remote connector**
+(claude.ai web + mobile), the one-click Claude Desktop `.mcpb` bundle, manual archive downloads with
+per-client config snippets (Claude Desktop, Claude Code, VS Code, Cursor), the macOS Gatekeeper
+note, first-run sign-in, and troubleshooting. The rest of this README is developer-oriented
+reference.
 
 > **Deployment prerequisite (production).** The connector talks to two server-side deploys that must
 > already be live: the WritersBlock **API** must serve `GET /api/mcp/manifest`, and the **auth

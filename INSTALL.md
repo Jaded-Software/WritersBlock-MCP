@@ -5,7 +5,13 @@ API to MCP-capable AI clients (Claude Desktop, Claude Code, VS Code/Copilot, Cur
 over stdio and turns every WritersBlock API function into a tool. Nothing runs on WritersBlock's
 servers — each request the connector makes is ordinary authenticated API traffic from your account.
 
-There are two ways to install it:
+> **Don't want to install anything?** WritersBlock also hosts a **remote connector** that works from
+> claude.ai in the browser **and the Claude mobile apps** — no download, no local process. It exposes
+> a curated subset of tools rather than the full catalog. See
+> [Remote connector](#0-no-install-option--remote-connector-claudeai-web--mobile) below to decide
+> which fits.
+
+There are two ways to install the local connector:
 
 - **[1. Claude Desktop — one-click bundle](#1-claude-desktop--one-click-mcpb-bundle)** (`.mcpb`) — easiest.
 - **[2. Manual — download an archive](#2-manual--download-the-archive)** — for Claude Code, VS Code, Cursor, or Claude Desktop by hand.
@@ -17,6 +23,43 @@ Then see **[3. First run](#3-first-run--signing-in)** and **[4. Troubleshooting]
 > must have the `writersblock-mcp` OAuth client registered. If either is not yet deployed, the
 > connector installs and starts but lists **zero tools** and/or login fails. Until then, point the
 > connector at a local dev environment (see the dev notes below).
+
+---
+
+## 0. No-install option — remote connector (claude.ai web & mobile)
+
+WritersBlock hosts a remote MCP server at `https://writersblock.jadedsoftware.com/mcp` (streamable
+HTTP). Adding it as a **custom connector** on claude.ai gives you WritersBlock tools with no
+download at all, and — because connectors are configured per account — it then works from the
+**Claude mobile apps** too. Custom connectors are available on all Claude plans (Free allows one).
+
+**Setup (once, on claude.ai in a browser):**
+
+1. Go to **Settings → Connectors → Add custom connector**.
+2. Remote MCP server URL: `https://writersblock.jadedsoftware.com/mcp`
+3. Open **Advanced settings** and enter OAuth Client ID: `writersblock-mcp-remote` (leave the
+   client secret blank).
+4. Save, then click **Connect** — your browser goes through the normal WritersBlock sign-in.
+   Your existing account access and subscription gating apply unchanged.
+
+Once connected on the web, enable the connector in a conversation's tools menu — on desktop, web,
+or your phone.
+
+**Remote vs. local — which should you use?**
+
+| | Remote connector | Local connector (this document) |
+|---|---|---|
+| Install | None | Download binary / `.mcpb` |
+| Works in | claude.ai web, Claude Desktop, **Claude mobile** | Claude Desktop, Claude Code, VS Code, Cursor — any stdio MCP client |
+| Tool surface | **Curated subset** (~40 core tools: projects, documents, characters, places, timelines, story attributes…) | **Every** API function (1,250+ tools) |
+| Auth | OAuth in the browser when you connect | OAuth via system browser on first tool call |
+
+Use the remote connector for reading and writing your projects from anywhere, especially your
+phone. Use the local connector when you need the complete tool catalog or a non-Claude MCP client.
+
+> The remote endpoint requires the current server deployment (API `/mcp` endpoint + the
+> `writersblock-mcp-remote` OAuth client on the auth server). If "Connect" fails with an
+> authorization error, the server side likely hasn't shipped yet.
 
 ---
 

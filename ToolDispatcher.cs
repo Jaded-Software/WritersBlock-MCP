@@ -181,12 +181,21 @@ public sealed class ToolDispatcher(HttpClient http, McpConnectorConfig config, T
         var providedFiles = def.FormFileParameters
             .Where(f => args.TryGetValue(f, out var v) && v.ValueKind == JsonValueKind.String)
             .ToList();
+        var formParameters = def.Parameters
+            .Where(parameter => parameter.Location.Equals("form", StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         if (def.BodyRequired && !hasBody && def.BodySchema is not null)
             throw new ArgumentException($"Missing required 'body' argument for '{def.Name}'.");
 
-        // Multipart when any form-file is present; fold body/scalar fields in as form fields too.
-        if (def.FormFileParameters.Count > 0 && providedFiles.Count > 0)
+        if (providedFiles.Count != def.FormFileParameters.Count)
+        {
+            var missingFile = def.FormFileParameters.First(file => !providedFiles.Contains(file));
+            throw new ArgumentException($"Missing required form-file parameter '{missingFile}'.");
+        }
+
+        // Multipart when the action declares file or scalar form inputs.
+        if (def.FormFileParameters.Count > 0 || formParameters.Count > 0)
         {
             var multipart = new MultipartFormDataContent();
             foreach (var fileParam in providedFiles)
@@ -203,9 +212,21 @@ public sealed class ToolDispatcher(HttpClient http, McpConnectorConfig config, T
                     throw new ArgumentException($"Form-file parameter '{fileParam}' is not valid base64.");
                 }
 
+                // Servers that validate uploads (e.g. image endpoints) reject a blind
+                // application/octet-stream, so derive the real media type from the file's
+                // magic bytes and give the part a matching filename extension.
+                var (mediaType, extension) = SniffContentType(bytes);
                 var fileContent = new ByteArrayContent(bytes);
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                multipart.Add(fileContent, fileParam, fileParam);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+                multipart.Add(fileContent, fileParam, fileParam + extension);
+            }
+
+            // Non-file [FromForm] inputs (e.g. projectId) ride alongside the file parts.
+            foreach (var p in formParameters)
+            {
+                if (!args.TryGetValue(p.Name, out var value) || value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                    continue;
+                multipart.Add(new StringContent(ScalarToString(value)), p.Name);
             }
 
             if (hasBody)
@@ -335,6 +356,39 @@ public sealed class ToolDispatcher(HttpClient http, McpConnectorConfig config, T
 
         var body = Convert.ToBase64String(bytes);
         return Ok($"[binary content-type={mediaType}, {bytes.Length} bytes, base64]\n{body}");
+    }
+
+    /// <summary>
+    /// Infers a media type and matching file extension from a byte payload's magic number.
+    /// Covers the image formats the API's upload endpoints accept (JPEG, PNG, WebP, GIF), PDF,
+    /// and DOCX; falls back to <c>application/octet-stream</c> when unrecognized.
+    /// </summary>
+    private static (string MediaType, string Extension) SniffContentType(byte[] bytes)
+    {
+        static bool Starts(byte[] b, params byte[] sig)
+        {
+            if (b.Length < sig.Length) return false;
+            for (var i = 0; i < sig.Length; i++)
+                if (b[i] != sig[i]) return false;
+            return true;
+        }
+
+        if (Starts(bytes, 0xFF, 0xD8, 0xFF))
+            return ("image/jpeg", ".jpg");
+        if (Starts(bytes, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
+            return ("image/png", ".png");
+        if (Starts(bytes, 0x47, 0x49, 0x46, 0x38)) // "GIF8"
+            return ("image/gif", ".gif");
+        // WebP: "RIFF" .... "WEBP"
+        if (bytes.Length >= 12 && Starts(bytes, 0x52, 0x49, 0x46, 0x46) &&
+            bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50)
+            return ("image/webp", ".webp");
+        if (Starts(bytes, 0x25, 0x50, 0x44, 0x46)) // "%PDF"
+            return ("application/pdf", ".pdf");
+        if (Starts(bytes, 0x50, 0x4B) && bytes.AsSpan().IndexOf("word/document.xml"u8) >= 0)
+            return ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx");
+
+        return ("application/octet-stream", "");
     }
 
     private static string ScalarToString(JsonElement value) => value.ValueKind switch
